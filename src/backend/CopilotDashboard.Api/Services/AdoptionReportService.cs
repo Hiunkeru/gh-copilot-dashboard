@@ -172,7 +172,7 @@ IMPORTANTE:
                 new { role = "system", content = systemPrompt },
                 new { role = "user", content = $"Genera el informe de adopción de GitHub Copilot basado en estos datos:\n\n{dataContext}" }
             },
-            max_tokens = 4000,
+            max_completion_tokens = 4000,
             temperature = 0.3
         };
 
