@@ -108,7 +108,8 @@ public class DailyMetricsSyncService : BackgroundService
         var seats = await githubService.GetAllSeatsAsync(ct);
 
         // Mark all users as not having seat, then re-mark those that do
-        await db.Users.ExecuteUpdateAsync(s => s.SetProperty(u => u.HasSeat, false), ct);
+        var allUsers = await db.Users.ToListAsync(ct);
+        foreach (var u in allUsers) u.HasSeat = false;
 
         foreach (var seat in seats)
         {
@@ -165,9 +166,10 @@ public class DailyMetricsSyncService : BackgroundService
         await db.SaveChangesAsync(ct);
 
         // Delete existing records for the date range then bulk insert
-        await db.DailyUsages
+        var existingUsages = await db.DailyUsages
             .Where(d => dates.Contains(d.Date) && userLogins.Contains(d.UserLogin))
-            .ExecuteDeleteAsync(ct);
+            .ToListAsync(ct);
+        db.DailyUsages.RemoveRange(existingUsages);
 
         db.DailyUsages.AddRange(usages);
         await db.SaveChangesAsync(ct);
@@ -180,9 +182,10 @@ public class DailyMetricsSyncService : BackgroundService
         var dates = details.Select(d => d.Date).Distinct().ToList();
         var userLogins = details.Select(d => d.UserLogin).Distinct().ToList();
 
-        await db.DailyUsageDetails
+        var existingDetails = await db.DailyUsageDetails
             .Where(d => dates.Contains(d.Date) && userLogins.Contains(d.UserLogin))
-            .ExecuteDeleteAsync(ct);
+            .ToListAsync(ct);
+        db.DailyUsageDetails.RemoveRange(existingDetails);
 
         db.DailyUsageDetails.AddRange(details);
         await db.SaveChangesAsync(ct);
