@@ -1,6 +1,6 @@
 import { IPublicClientApplication } from '@azure/msal-browser';
 import { loginRequest } from './msalConfig';
-import type { AdoptionOverview, UserActivityPage, FeatureUsage, DistributionItem, TrendPoint, Roi } from './types';
+import type { AdoptionOverview, UserActivityPage, FeatureUsage, DistributionItem, TrendPoint, Roi, UserDayDetail } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5135';
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
@@ -48,7 +48,7 @@ export const api = {
     const qs = new URLSearchParams(params).toString();
     return fetchApi<UserActivityPage>(`/api/users?${qs}`, msal);
   },
-  getUserHistory: (msal: IPublicClientApplication | null, login: string) => fetchApi<TrendPoint[]>(`/api/users/${login}/history`, msal),
+  getUserHistory: (msal: IPublicClientApplication | null, login: string) => fetchApi<UserDayDetail[]>(`/api/users/${login}/history`, msal),
   triggerSync: async (msal: IPublicClientApplication | null) => {
     const token = await getToken(msal);
     const headers: Record<string, string> = {};

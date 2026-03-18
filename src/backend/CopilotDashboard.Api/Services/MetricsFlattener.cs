@@ -15,8 +15,8 @@ public class MetricsFlattener : IMetricsFlattener
 
         var details = new List<DailyUsageDetail>();
 
-        // Check if this is the new format (totals_by_ide) or legacy format
-        if (record.TotalsByIde is { Count: > 0 })
+        // Check if this is the new format (totals_by_ide / totals_by_feature) or legacy format
+        if (record.TotalsByIde is { Count: > 0 } || record.TotalsByFeature is { Count: > 0 })
         {
             return FlattenNewFormat(record, date, details);
         }
@@ -32,7 +32,23 @@ public class MetricsFlattener : IMetricsFlattener
             Date = date,
             IsActive = record.IsActive,
             IsEngaged = record.IsEngagedUser == true,
+            InteractionCount = record.UserInitiatedInteractionCount,
+            CodeGenerationCount = record.CodeGenerationActivityCount,
+            CodeAcceptanceCount = record.CodeAcceptanceActivityCount,
+            LocSuggestedToAdd = record.LocSuggestedToAddSum,
+            LocSuggestedToDelete = record.LocSuggestedToDeleteSum,
+            LocAdded = record.LocAddedSum,
+            LocDeleted = record.LocDeletedSum,
+            UsedChat = record.UsedChat,
+            UsedAgent = record.UsedAgent,
+            UsedCli = record.UsedCli,
+            ChatAgentModeCount = record.ChatPanelAgentMode ?? 0,
+            ChatAskModeCount = record.ChatPanelAskMode ?? 0,
+            ChatEditModeCount = record.ChatPanelEditMode ?? 0,
         };
+
+        PopulateCliFields(usage, record);
+
         return (usage, details);
     }
 
@@ -43,47 +59,62 @@ public class MetricsFlattener : IMetricsFlattener
         int totalLinesSuggested = 0, totalLinesAccepted = 0;
         var editors = new Dictionary<string, int>();
         var languages = new Dictionary<string, int>();
-        bool chatEngaged = false, agentEngaged = false;
 
-        foreach (var ide in record.TotalsByIde!)
+        // Process totals_by_ide for editor breakdown and detail rows
+        if (record.TotalsByIde is not null)
         {
-            totalSuggestions += ide.CodeGenerationActivityCount;
-            totalAcceptances += ide.CodeAcceptanceActivityCount;
-            editors[ide.Ide] = editors.GetValueOrDefault(ide.Ide) + ide.CodeGenerationActivityCount;
-
-            // Check features
-            if (ide.TotalsByFeature is not null)
+            foreach (var ide in record.TotalsByIde)
             {
-                foreach (var feat in ide.TotalsByFeature)
+                totalSuggestions += ide.CodeGenerationActivityCount;
+                totalAcceptances += ide.CodeAcceptanceActivityCount;
+                editors[ide.Ide] = editors.GetValueOrDefault(ide.Ide) + ide.CodeGenerationActivityCount;
+
+                // If the IDE entry has nested language data (older new-format variant)
+                if (ide.TotalsByLanguage is not null)
                 {
-                    if (feat.Feature.Contains("chat", StringComparison.OrdinalIgnoreCase) && feat.UserInitiatedInteractionCount > 0)
-                        chatEngaged = true;
-                    if (feat.Feature.Contains("agent", StringComparison.OrdinalIgnoreCase) && feat.UserInitiatedInteractionCount > 0)
-                        agentEngaged = true;
+                    foreach (var lang in ide.TotalsByLanguage)
+                    {
+                        languages[lang.Language] = languages.GetValueOrDefault(lang.Language) + lang.CodeGenerationActivityCount;
+                        totalLinesSuggested += lang.CodeLinesGeneratedCount;
+                        totalLinesAccepted += lang.CodeLinesAcceptedCount;
+
+                        details.Add(new DailyUsageDetail
+                        {
+                            UserLogin = record.UserLogin,
+                            Date = date,
+                            EditorName = ide.Ide,
+                            LanguageName = lang.Language,
+                            Suggestions = lang.CodeGenerationActivityCount,
+                            Acceptances = lang.CodeAcceptanceActivityCount,
+                            LinesSuggested = lang.CodeLinesGeneratedCount,
+                            LinesAccepted = lang.CodeLinesAcceptedCount,
+                        });
+                    }
                 }
             }
+        }
 
-            // Language details
-            if (ide.TotalsByLanguage is not null)
+        // Process totals_by_language_feature for language breakdown detail rows
+        if (record.TotalsByLanguageFeature is { Count: > 0 })
+        {
+            foreach (var lf in record.TotalsByLanguageFeature)
             {
-                foreach (var lang in ide.TotalsByLanguage)
-                {
-                    languages[lang.Language] = languages.GetValueOrDefault(lang.Language) + lang.CodeGenerationActivityCount;
-                    totalLinesSuggested += lang.CodeLinesGeneratedCount;
-                    totalLinesAccepted += lang.CodeLinesAcceptedCount;
+                languages[lf.Language] = languages.GetValueOrDefault(lf.Language) + lf.CodeGenerationActivityCount;
 
-                    details.Add(new DailyUsageDetail
-                    {
-                        UserLogin = record.UserLogin,
-                        Date = date,
-                        EditorName = ide.Ide,
-                        LanguageName = lang.Language,
-                        Suggestions = lang.CodeGenerationActivityCount,
-                        Acceptances = lang.CodeAcceptanceActivityCount,
-                        LinesSuggested = lang.CodeLinesGeneratedCount,
-                        LinesAccepted = lang.CodeLinesAcceptedCount,
-                    });
-                }
+                // Determine the editor from totals_by_ide (use primary or "unknown")
+                var editorName = record.TotalsByIde?.FirstOrDefault()?.Ide ?? "unknown";
+
+                details.Add(new DailyUsageDetail
+                {
+                    UserLogin = record.UserLogin,
+                    Date = date,
+                    EditorName = editorName,
+                    LanguageName = lf.Language,
+                    Suggestions = lf.CodeGenerationActivityCount,
+                    Acceptances = lf.CodeAcceptanceActivityCount,
+                    LinesSuggested = lf.LocSuggestedToAddSum,
+                    LinesAccepted = lf.LocAddedSum,
+                });
             }
         }
 
@@ -106,6 +137,39 @@ public class MetricsFlattener : IMetricsFlattener
         var primaryEditor = editors.OrderByDescending(kv => kv.Value).FirstOrDefault().Key ?? "unknown";
         var primaryLanguage = languages.OrderByDescending(kv => kv.Value).FirstOrDefault().Key ?? "unknown";
 
+        // Determine chat/agent engaged from totals_by_feature or used_* flags
+        bool chatEngaged = record.UsedChat;
+        bool agentEngaged = record.UsedAgent;
+
+        if (record.TotalsByFeature is not null)
+        {
+            foreach (var feat in record.TotalsByFeature)
+            {
+                if (feat.Feature.Contains("chat", StringComparison.OrdinalIgnoreCase) && feat.UserInitiatedInteractionCount > 0)
+                    chatEngaged = true;
+                if (feat.Feature.Contains("agent", StringComparison.OrdinalIgnoreCase) && feat.UserInitiatedInteractionCount > 0)
+                    agentEngaged = true;
+            }
+        }
+
+        // Also check IDE-level features (older new-format variant)
+        if (record.TotalsByIde is not null)
+        {
+            foreach (var ide in record.TotalsByIde)
+            {
+                if (ide.TotalsByFeature is not null)
+                {
+                    foreach (var feat in ide.TotalsByFeature)
+                    {
+                        if (feat.Feature.Contains("chat", StringComparison.OrdinalIgnoreCase) && feat.UserInitiatedInteractionCount > 0)
+                            chatEngaged = true;
+                        if (feat.Feature.Contains("agent", StringComparison.OrdinalIgnoreCase) && feat.UserInitiatedInteractionCount > 0)
+                            agentEngaged = true;
+                    }
+                }
+            }
+        }
+
         var usage = new DailyUsage
         {
             UserLogin = record.UserLogin,
@@ -114,14 +178,31 @@ public class MetricsFlattener : IMetricsFlattener
             IsEngaged = totalAcceptances > 0 || record.UserInitiatedInteractionCount > 0,
             CompletionsSuggestions = totalSuggestions,
             CompletionsAcceptances = totalAcceptances,
-            CompletionsLinesSuggested = totalLinesSuggested,
-            CompletionsLinesAccepted = totalLinesAccepted,
+            CompletionsLinesSuggested = totalLinesSuggested > 0 ? totalLinesSuggested : record.LocSuggestedToAddSum,
+            CompletionsLinesAccepted = totalLinesAccepted > 0 ? totalLinesAccepted : record.LocAddedSum,
             ChatEngaged = chatEngaged,
             AgentEngaged = agentEngaged,
-            CliEngaged = false,
+            CliEngaged = record.UsedCli || (record.TotalsByCli?.IsEngagedUser ?? false),
             PrimaryEditor = primaryEditor,
             PrimaryLanguage = primaryLanguage,
+
+            // New fields
+            LocSuggestedToAdd = record.LocSuggestedToAddSum,
+            LocSuggestedToDelete = record.LocSuggestedToDeleteSum,
+            LocAdded = record.LocAddedSum,
+            LocDeleted = record.LocDeletedSum,
+            InteractionCount = record.UserInitiatedInteractionCount,
+            CodeGenerationCount = record.CodeGenerationActivityCount,
+            CodeAcceptanceCount = record.CodeAcceptanceActivityCount,
+            UsedChat = record.UsedChat,
+            UsedAgent = record.UsedAgent,
+            UsedCli = record.UsedCli,
+            ChatAgentModeCount = record.ChatPanelAgentMode ?? 0,
+            ChatAskModeCount = record.ChatPanelAskMode ?? 0,
+            ChatEditModeCount = record.ChatPanelEditMode ?? 0,
         };
+
+        PopulateCliFields(usage, record);
 
         return (usage, details);
     }
@@ -199,8 +280,39 @@ public class MetricsFlattener : IMetricsFlattener
             CliEngaged = record.TotalsByCli?.IsEngagedUser ?? false,
             PrimaryEditor = primaryEditor,
             PrimaryLanguage = primaryLanguage,
+
+            // Legacy format doesn't have these directly, use what's available
+            LocSuggestedToAdd = record.LocSuggestedToAddSum > 0 ? record.LocSuggestedToAddSum : totalLinesSuggested,
+            LocSuggestedToDelete = record.LocSuggestedToDeleteSum,
+            LocAdded = record.LocAddedSum > 0 ? record.LocAddedSum : totalLinesAccepted,
+            LocDeleted = record.LocDeletedSum,
+            InteractionCount = record.UserInitiatedInteractionCount,
+            CodeGenerationCount = record.CodeGenerationActivityCount > 0 ? record.CodeGenerationActivityCount : totalSuggestions,
+            CodeAcceptanceCount = record.CodeAcceptanceActivityCount > 0 ? record.CodeAcceptanceActivityCount : totalAcceptances,
+            UsedChat = record.CopilotIdeChat?.IsEngagedUser ?? false,
+            UsedAgent = record.CopilotIdeAgent?.IsEngagedUser ?? false,
+            UsedCli = record.TotalsByCli?.IsEngagedUser ?? false,
+            ChatAgentModeCount = record.ChatPanelAgentMode ?? 0,
+            ChatAskModeCount = record.ChatPanelAskMode ?? 0,
+            ChatEditModeCount = record.ChatPanelEditMode ?? 0,
         };
 
+        PopulateCliFields(usage, record);
+
         return (usage, details);
+    }
+
+    private static void PopulateCliFields(DailyUsage usage, UserMetricsRecord record)
+    {
+        if (record.TotalsByCli is { } cli)
+        {
+            usage.CliSessionCount = cli.SessionCount;
+            usage.CliRequestCount = cli.RequestCount;
+            if (cli.TokenUsage is { } tokens)
+            {
+                usage.CliPromptTokens = tokens.PromptTokensSum;
+                usage.CliOutputTokens = tokens.OutputTokensSum;
+            }
+        }
     }
 }

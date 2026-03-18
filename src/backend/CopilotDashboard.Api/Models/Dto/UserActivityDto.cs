@@ -14,6 +14,12 @@ public class UserActivityDto
     public bool UsesChat { get; set; }
     public bool UsesAgent { get; set; }
     public bool UsesCli { get; set; }
+    public int LocAdded { get; set; }
+    public int LocSuggestedToAdd { get; set; }
+    public int InteractionCount { get; set; }
+    public bool UsedChat { get; set; }
+    public bool UsedAgent { get; set; }
+    public bool UsedCli { get; set; }
     public string Category { get; set; } = string.Empty; // PowerUser, Occasional, Inactive, NeverUsed
 }
 

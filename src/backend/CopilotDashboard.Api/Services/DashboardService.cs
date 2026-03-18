@@ -79,14 +79,27 @@ public class DashboardService : IDashboardService
             .OrderBy(a => a.Date)
             .ToListAsync(ct);
 
-        return aggregates.Select(a => new TrendPointDto
+        // Load daily usage data for new aggregate fields
+        var usageData = await _db.DailyUsages
+            .Where(d => d.Date >= since)
+            .ToListAsync(ct);
+        var usageByDate = usageData.GroupBy(d => d.Date).ToDictionary(g => g.Key, g => g.ToList());
+
+        return aggregates.Select(a =>
         {
-            Date = a.Date.ToString("yyyy-MM-dd"),
-            ActiveUsers = a.TotalActiveUsers,
-            EngagedUsers = a.TotalEngagedUsers,
-            Suggestions = a.TotalSuggestions,
-            Acceptances = a.TotalAcceptances,
-            AcceptanceRate = Math.Round(a.AcceptanceRate * 100, 1),
+            var dayUsages = usageByDate.GetValueOrDefault(a.Date, []);
+            return new TrendPointDto
+            {
+                Date = a.Date.ToString("yyyy-MM-dd"),
+                ActiveUsers = a.TotalActiveUsers,
+                EngagedUsers = a.TotalEngagedUsers,
+                Suggestions = a.TotalSuggestions,
+                Acceptances = a.TotalAcceptances,
+                AcceptanceRate = Math.Round(a.AcceptanceRate * 100, 1),
+                LocAdded = dayUsages.Sum(d => d.LocAdded),
+                LocSuggestedToAdd = dayUsages.Sum(d => d.LocSuggestedToAdd),
+                InteractionCount = dayUsages.Sum(d => d.InteractionCount),
+            };
         }).ToList();
     }
 
@@ -230,6 +243,12 @@ public class DashboardService : IDashboardService
                 UsesChat = userUsage.Any(d => d.ChatEngaged),
                 UsesAgent = userUsage.Any(d => d.AgentEngaged),
                 UsesCli = userUsage.Any(d => d.CliEngaged),
+                LocAdded = userUsage.Sum(d => d.LocAdded),
+                LocSuggestedToAdd = userUsage.Sum(d => d.LocSuggestedToAdd),
+                InteractionCount = userUsage.Sum(d => d.InteractionCount),
+                UsedChat = userUsage.Any(d => d.UsedChat),
+                UsedAgent = userUsage.Any(d => d.UsedAgent),
+                UsedCli = userUsage.Any(d => d.UsedCli),
                 Category = cat.ToString(),
             };
         }).ToList();
@@ -258,7 +277,7 @@ public class DashboardService : IDashboardService
         };
     }
 
-    public async Task<List<TrendPointDto>> GetUserHistoryAsync(string userLogin, CancellationToken ct = default)
+    public async Task<List<UserDayDetailDto>> GetUserHistoryAsync(string userLogin, CancellationToken ct = default)
     {
         var since = DateOnly.FromDateTime(DateTime.UtcNow).AddDays(-28);
 
@@ -267,16 +286,68 @@ public class DashboardService : IDashboardService
             .OrderBy(d => d.Date)
             .ToListAsync(ct);
 
-        return data.Select(d => new TrendPointDto
+        var detailData = await _db.DailyUsageDetails
+            .Where(d => d.UserLogin == userLogin && d.Date >= since)
+            .ToListAsync(ct);
+
+        var detailsByDate = detailData.GroupBy(d => d.Date).ToDictionary(g => g.Key, g => g.ToList());
+
+        return data.Select(d =>
         {
-            Date = d.Date.ToString("yyyy-MM-dd"),
-            ActiveUsers = d.IsActive ? 1 : 0,
-            EngagedUsers = d.IsEngaged ? 1 : 0,
-            Suggestions = d.CompletionsSuggestions,
-            Acceptances = d.CompletionsAcceptances,
-            AcceptanceRate = d.CompletionsSuggestions > 0
-                ? Math.Round((decimal)d.CompletionsAcceptances / d.CompletionsSuggestions * 100, 1)
-                : 0,
+            var dayDetails = detailsByDate.GetValueOrDefault(d.Date, []);
+
+            // Build language breakdown from detail rows
+            var languageBreakdowns = dayDetails
+                .GroupBy(det => det.LanguageName)
+                .Select(g => new LanguageBreakdownDto
+                {
+                    Language = g.Key,
+                    CodeGenerationCount = g.Sum(x => x.Suggestions),
+                    CodeAcceptanceCount = g.Sum(x => x.Acceptances),
+                    LocSuggestedToAdd = g.Sum(x => x.LinesSuggested),
+                    LocAdded = g.Sum(x => x.LinesAccepted),
+                })
+                .OrderByDescending(x => x.CodeGenerationCount)
+                .ToList();
+
+            // Build feature breakdown from detail rows (group by editor as proxy for feature)
+            var featureBreakdowns = dayDetails
+                .GroupBy(det => det.EditorName)
+                .Select(g => new FeatureBreakdownDto
+                {
+                    Feature = g.Key,
+                    CodeGenerationCount = g.Sum(x => x.Suggestions),
+                    CodeAcceptanceCount = g.Sum(x => x.Acceptances),
+                    LocAdded = g.Sum(x => x.LinesAccepted),
+                })
+                .OrderByDescending(x => x.CodeGenerationCount)
+                .ToList();
+
+            return new UserDayDetailDto
+            {
+                Date = d.Date.ToString("yyyy-MM-dd"),
+                IsActive = d.IsActive,
+                InteractionCount = d.InteractionCount,
+                CodeGenerationCount = d.CodeGenerationCount,
+                CodeAcceptanceCount = d.CodeAcceptanceCount,
+                LocSuggestedToAdd = d.LocSuggestedToAdd,
+                LocAdded = d.LocAdded,
+                LocSuggestedToDelete = d.LocSuggestedToDelete,
+                LocDeleted = d.LocDeleted,
+                UsedChat = d.UsedChat,
+                UsedAgent = d.UsedAgent,
+                UsedCli = d.UsedCli,
+                ChatAgentModeCount = d.ChatAgentModeCount,
+                ChatAskModeCount = d.ChatAskModeCount,
+                ChatEditModeCount = d.ChatEditModeCount,
+                AcceptanceRate = d.CodeGenerationCount > 0
+                    ? Math.Round((decimal)d.CodeAcceptanceCount / d.CodeGenerationCount * 100, 1)
+                    : 0,
+                PrimaryEditor = d.PrimaryEditor,
+                PrimaryLanguage = d.PrimaryLanguage,
+                Features = featureBreakdowns,
+                Languages = languageBreakdowns,
+            };
         }).ToList();
     }
 }

@@ -44,6 +44,8 @@ export function UserActivityTable({ users, totalCount, page, pageSize, onPageCha
               <SortHeader field="suggestions">Suggestions</SortHeader>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acceptances</th>
               <SortHeader field="acceptanceRate">Accept Rate</SortHeader>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">LOC Added</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Interactions</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Features</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Category</th>
             </tr>
@@ -53,7 +55,7 @@ export function UserActivityTable({ users, totalCount, page, pageSize, onPageCha
               <tr key={user.userLogin} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">{user.userLogin}</p>
+                    <a href={`/metrics/users/${user.userLogin}`} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">{user.userLogin}</a>
                     {user.displayName && <p className="text-xs text-gray-500 dark:text-gray-400">{user.displayName}</p>}
                   </div>
                 </td>
@@ -64,11 +66,13 @@ export function UserActivityTable({ users, totalCount, page, pageSize, onPageCha
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.totalSuggestions.toLocaleString()}</td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.totalAcceptances.toLocaleString()}</td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.acceptanceRate}%</td>
+                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.locAdded.toLocaleString()}</td>
+                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.interactionCount.toLocaleString()}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-1">
-                    {user.usesChat && <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">Chat</span>}
-                    {user.usesAgent && <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded">Agent</span>}
-                    {user.usesCli && <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded">CLI</span>}
+                    {user.usedChat && <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded">Chat</span>}
+                    {user.usedAgent && <span className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 px-1.5 py-0.5 rounded">Agent</span>}
+                    {user.usedCli && <span className="text-xs bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 px-1.5 py-0.5 rounded">CLI</span>}
                   </div>
                 </td>
                 <td className="px-4 py-3"><UserCategoryBadge category={user.category} /></td>

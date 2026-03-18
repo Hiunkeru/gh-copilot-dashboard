@@ -23,6 +23,12 @@ export interface UserActivity {
   totalSuggestions: number;
   totalAcceptances: number;
   acceptanceRate: number;
+  locAdded: number;
+  locSuggestedToAdd: number;
+  interactionCount: number;
+  usedChat: boolean;
+  usedAgent: boolean;
+  usedCli: boolean;
   usesChat: boolean;
   usesAgent: boolean;
   usesCli: boolean;
@@ -63,6 +69,48 @@ export interface TrendPoint {
   suggestions: number;
   acceptances: number;
   acceptanceRate: number;
+  locAdded: number;
+  locSuggestedToAdd: number;
+  interactionCount: number;
+}
+
+export interface UserDayDetail {
+  date: string;
+  isActive: boolean;
+  interactionCount: number;
+  codeGenerationCount: number;
+  codeAcceptanceCount: number;
+  locSuggestedToAdd: number;
+  locAdded: number;
+  locSuggestedToDelete: number;
+  locDeleted: number;
+  usedChat: boolean;
+  usedAgent: boolean;
+  usedCli: boolean;
+  chatAgentModeCount: number;
+  chatAskModeCount: number;
+  chatEditModeCount: number;
+  acceptanceRate: number;
+  primaryEditor: string | null;
+  primaryLanguage: string | null;
+  features: FeatureBreakdown[];
+  languages: LanguageBreakdown[];
+}
+
+export interface FeatureBreakdown {
+  feature: string;
+  codeGenerationCount: number;
+  codeAcceptanceCount: number;
+  locAdded: number;
+}
+
+export interface LanguageBreakdown {
+  language: string;
+  feature?: string;
+  codeGenerationCount: number;
+  codeAcceptanceCount: number;
+  locSuggestedToAdd: number;
+  locAdded: number;
 }
 
 export interface Roi {

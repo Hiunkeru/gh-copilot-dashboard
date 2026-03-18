@@ -45,6 +45,25 @@ public class AppDbContext : DbContext
             entity.Property(e => e.PrimaryEditor).HasColumnName("primary_editor").HasMaxLength(50);
             entity.Property(e => e.PrimaryLanguage).HasColumnName("primary_language").HasMaxLength(50);
 
+            // New metric fields
+            entity.Property(e => e.LocSuggestedToAdd).HasColumnName("loc_suggested_to_add");
+            entity.Property(e => e.LocSuggestedToDelete).HasColumnName("loc_suggested_to_delete");
+            entity.Property(e => e.LocAdded).HasColumnName("loc_added");
+            entity.Property(e => e.LocDeleted).HasColumnName("loc_deleted");
+            entity.Property(e => e.InteractionCount).HasColumnName("interaction_count");
+            entity.Property(e => e.CodeGenerationCount).HasColumnName("code_generation_count");
+            entity.Property(e => e.CodeAcceptanceCount).HasColumnName("code_acceptance_count");
+            entity.Property(e => e.UsedChat).HasColumnName("used_chat");
+            entity.Property(e => e.UsedAgent).HasColumnName("used_agent");
+            entity.Property(e => e.UsedCli).HasColumnName("used_cli");
+            entity.Property(e => e.ChatAgentModeCount).HasColumnName("chat_agent_mode_count");
+            entity.Property(e => e.ChatAskModeCount).HasColumnName("chat_ask_mode_count");
+            entity.Property(e => e.ChatEditModeCount).HasColumnName("chat_edit_mode_count");
+            entity.Property(e => e.CliSessionCount).HasColumnName("cli_session_count");
+            entity.Property(e => e.CliRequestCount).HasColumnName("cli_request_count");
+            entity.Property(e => e.CliPromptTokens).HasColumnName("cli_prompt_tokens");
+            entity.Property(e => e.CliOutputTokens).HasColumnName("cli_output_tokens");
+
             entity.HasOne(e => e.User)
                 .WithMany(u => u.DailyUsages)
                 .HasForeignKey(e => e.UserLogin);
