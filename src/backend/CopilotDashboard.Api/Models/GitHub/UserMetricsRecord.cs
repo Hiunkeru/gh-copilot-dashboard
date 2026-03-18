@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace CopilotDashboard.Api.Models.GitHub;
@@ -316,7 +317,7 @@ public class CliTotals
     public int PromptCount { get; set; }
 
     [JsonPropertyName("last_known_cli_version")]
-    public string? LastKnownCliVersion { get; set; }
+    public JsonElement? LastKnownCliVersion { get; set; }
 
     [JsonPropertyName("token_usage")]
     public CliTokenUsage? TokenUsage { get; set; }
