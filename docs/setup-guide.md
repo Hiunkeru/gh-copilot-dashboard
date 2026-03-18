@@ -62,25 +62,50 @@ A nivel de org existe el equivalente: `View organization Copilot metrics`.
 
 ## 3. Crear el Personal Access Token
 
-### Opcion A: Classic PAT (mas sencillo)
+### Opcion A: Classic PAT (recomendado)
 
 1. Ve a **github.com** > Settings > Developer settings > **Personal access tokens** > **Tokens (classic)**
 2. Click **Generate new token (classic)**
 3. Nombre: `copilot-dashboard`
 4. Expiration: elige segun tu politica (90 dias recomendado)
-5. Scopes necesarios:
-   - `manage_billing:copilot` — para metricas de uso
-   - `read:org` — para leer seats y teams
-   - `read:enterprise` — si consultas a nivel enterprise
+5. Marca estos scopes:
+
+| Scope | Para que se usa |
+|-------|-----------------|
+| `manage_billing:copilot` | Leer metricas de uso de Copilot y asignacion de seats |
+| `read:org` (dentro de `admin:org`) | Leer seats, teams y miembros de la organizacion |
+| `read:enterprise` (dentro de `admin:enterprise`) | Acceder a metricas a nivel enterprise (endpoints `/enterprises/{slug}/...`) |
+
+> **Nota**: `read:org` esta dentro del grupo `admin:org` — marca solo `read:org`.
+> `read:enterprise` esta dentro del grupo `admin:enterprise` — marca solo `read:enterprise`.
+> Si tu enterprise no requiere enterprise-level y solo usas org-level, puedes omitir `read:enterprise`.
+
+Asi se ve en la pantalla de scopes:
+
+```
+[x] manage_billing:copilot   — View and edit Copilot Business seat assignments
+[ ] admin:org
+  [ ] write:org
+  [x] read:org                — Read org and team membership, read org projects
+[ ] admin:enterprise
+  [ ] manage_runners:enterprise
+  [ ] manage_billing:enterprise
+  [x] read:enterprise         — Read enterprise profile data
+```
+
 6. Click **Generate token** y **copia el token** (no lo veras de nuevo)
 
-### Opcion B: Fine-grained PAT
+### Opcion B: Fine-grained PAT (alternativa)
 
 1. Ve a **Personal access tokens** > **Fine-grained tokens**
-2. Resource owner: selecciona tu **enterprise** u **organization**
-3. Permisos necesarios:
-   - Organization permissions > **Copilot Business** > Read
-   - Organization permissions > **Members** > Read
+2. Resource owner: selecciona tu **organization**
+3. Repository access: **No repositories** (no necesita acceso a repos)
+4. Organization permissions:
+   - **GitHub Copilot Business** > Read
+   - **Members** > Read
+
+> Los Fine-grained PAT no soportan enterprise-level endpoints. Si necesitas
+> metricas a nivel enterprise (recomendado), usa un Classic PAT.
 
 ### Que puede ver el token
 
