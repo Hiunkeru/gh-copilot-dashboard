@@ -82,9 +82,15 @@ public class GitHubCopilotService : IGitHubCopilotService
             await using var stream = await response.Content.ReadAsStreamAsync(ct);
             using var reader = new StreamReader(stream);
 
+            var lineCount = 0;
             while (await reader.ReadLineAsync(ct) is { } line)
             {
                 if (string.IsNullOrWhiteSpace(line)) continue;
+                lineCount++;
+
+                // Log first 3 lines for debugging
+                if (lineCount <= 3)
+                    _logger.LogInformation("NDJSON sample line {N}: {Line}", lineCount, line[..Math.Min(300, line.Length)]);
 
                 UserMetricsRecord? record;
                 try
@@ -93,12 +99,17 @@ public class GitHubCopilotService : IGitHubCopilotService
                 }
                 catch (JsonException ex)
                 {
-                    _logger.LogWarning(ex, "Failed to parse NDJSON line: {Line}", line[..Math.Min(100, line.Length)]);
+                    _logger.LogWarning(ex, "Failed to parse NDJSON line: {Line}", line[..Math.Min(200, line.Length)]);
                     continue;
                 }
 
                 if (record is not null)
+                {
+                    if (lineCount <= 3)
+                        _logger.LogInformation("Parsed record: date={Date}, user={User}, active={Active}",
+                            record.Date, record.UserLogin, record.IsActiveUser);
                     yield return record;
+                }
             }
         }
     }
