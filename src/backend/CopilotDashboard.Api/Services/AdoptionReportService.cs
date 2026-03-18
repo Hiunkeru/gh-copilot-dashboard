@@ -13,20 +13,20 @@ namespace CopilotDashboard.Api.Services;
 public class AdoptionReportService : IAdoptionReportService
 {
     private readonly IDashboardService _dashboardService;
-    private readonly AppDbContext _db;
+    private readonly IReportStore _reportStore;
     private readonly AiFoundryOptions _aiOptions;
     private readonly GitHubOptions _ghOptions;
     private readonly ILogger<AdoptionReportService> _logger;
 
     public AdoptionReportService(
         IDashboardService dashboardService,
-        AppDbContext db,
+        IReportStore reportStore,
         IOptions<AiFoundryOptions> aiOptions,
         IOptions<GitHubOptions> ghOptions,
         ILogger<AdoptionReportService> logger)
     {
         _dashboardService = dashboardService;
-        _db = db;
+        _reportStore = reportStore;
         _aiOptions = aiOptions.Value;
         _ghOptions = ghOptions.Value;
         _logger = logger;
@@ -67,8 +67,7 @@ public class AdoptionReportService : IAdoptionReportService
             AcceptanceRate = overview.AcceptanceRate,
             GeneratedBy = "manual",
         };
-        _db.Reports.Add(entity);
-        await _db.SaveChangesAsync(ct);
+        await _reportStore.SaveAsync(entity, ct);
         report.Id = entity.Id;
 
         _logger.LogInformation("Report #{Id} generated and saved ({Length} chars)", entity.Id, reportMarkdown.Length);
@@ -77,26 +76,24 @@ public class AdoptionReportService : IAdoptionReportService
 
     public async Task<List<ReportListItemDto>> GetReportsAsync(CancellationToken ct = default)
     {
-        return await _db.Reports
-            .OrderByDescending(r => r.GeneratedAt)
-            .Select(r => new ReportListItemDto
-            {
-                Id = r.Id,
-                GeneratedAt = r.GeneratedAt.ToString("yyyy-MM-dd HH:mm UTC"),
-                PeriodStart = r.PeriodStart,
-                PeriodEnd = r.PeriodEnd,
-                TotalSeats = r.TotalSeats,
-                ActiveUsers = r.ActiveUsers,
-                AdoptionRate = r.AdoptionRate,
-                AcceptanceRate = r.AcceptanceRate,
-                GeneratedBy = r.GeneratedBy,
-            })
-            .ToListAsync(ct);
+        var reports = await _reportStore.GetAllAsync(ct);
+        return reports.Select(r => new ReportListItemDto
+        {
+            Id = r.Id,
+            GeneratedAt = r.GeneratedAt.ToString("yyyy-MM-dd HH:mm UTC"),
+            PeriodStart = r.PeriodStart,
+            PeriodEnd = r.PeriodEnd,
+            TotalSeats = r.TotalSeats,
+            ActiveUsers = r.ActiveUsers,
+            AdoptionRate = r.AdoptionRate,
+            AcceptanceRate = r.AcceptanceRate,
+            GeneratedBy = r.GeneratedBy,
+        }).ToList();
     }
 
     public async Task<AdoptionReportDto?> GetReportByIdAsync(int id, CancellationToken ct = default)
     {
-        var entity = await _db.Reports.FindAsync([id], ct);
+        var entity = await _reportStore.GetByIdAsync(id, ct);
         if (entity is null) return null;
 
         var report = ParseReport(entity.FullReportMarkdown, new AdoptionOverviewDto

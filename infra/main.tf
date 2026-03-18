@@ -33,6 +33,15 @@ module "sql" {
   tags                = var.tags
 }
 
+module "storage" {
+  source              = "./modules/storage"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  environment         = var.environment
+  project_name        = var.project_name
+  tags                = var.tags
+}
+
 module "app_service" {
   source              = "./modules/app-service"
   resource_group_name = azurerm_resource_group.main.name
@@ -41,6 +50,7 @@ module "app_service" {
   project_name        = var.project_name
   dotnet_version      = var.dotnet_version
   sql_connection_string            = module.sql.connection_string
+  storage_connection_string        = module.storage.connection_string
   keyvault_uri                     = module.keyvault.vault_uri
   app_insights_connection_string   = module.monitoring.app_insights_connection_string
   app_insights_instrumentation_key = module.monitoring.instrumentation_key

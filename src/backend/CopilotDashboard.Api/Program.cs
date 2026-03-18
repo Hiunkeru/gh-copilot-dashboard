@@ -52,6 +52,29 @@ builder.Services.AddScoped<IAdoptionReportService, AdoptionReportService>();
 builder.Services.AddSingleton<IMetricsFlattener, MetricsFlattener>();
 builder.Services.AddSingleton<IUserCategorizationService, UserCategorizationService>();
 
+// Report store: InMemory for dev, Azure Table Storage for prod
+if (isDev)
+{
+    builder.Services.AddSingleton<IReportStore, InMemoryReportStore>();
+}
+else
+{
+    var storageConnStr = builder.Configuration.GetConnectionString("StorageAccount");
+    if (!string.IsNullOrEmpty(storageConnStr))
+    {
+        builder.Services.AddSingleton<IReportStore>(sp =>
+        {
+            var tableClient = new Azure.Data.Tables.TableClient(storageConnStr, "reports");
+            tableClient.CreateIfNotExists();
+            return new TableStorageReportStore(tableClient, sp.GetRequiredService<ILogger<TableStorageReportStore>>());
+        });
+    }
+    else
+    {
+        builder.Services.AddSingleton<IReportStore, InMemoryReportStore>();
+    }
+}
+
 // Background sync service — always register it so SyncController can use it
 builder.Services.AddSingleton<DailyMetricsSyncService>();
 if (!isDev)

@@ -6,6 +6,7 @@ variable "dotnet_version" { type = string }
 variable "sql_connection_string" { type = string; sensitive = true }
 variable "keyvault_uri" { type = string }
 variable "keyvault_id" { type = string }
+variable "storage_connection_string" { type = string; sensitive = true }
 variable "app_insights_connection_string" { type = string }
 variable "app_insights_instrumentation_key" { type = string }
 variable "tags" { type = map(string) }

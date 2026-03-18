@@ -36,6 +36,12 @@ resource "azurerm_linux_web_app" "main" {
     type  = "SQLAzure"
     value = var.sql_connection_string
   }
+
+  connection_string {
+    name  = "StorageAccount"
+    type  = "Custom"
+    value = var.storage_connection_string
+  }
 }
 
 # Grant the App Service managed identity access to Key Vault secrets
