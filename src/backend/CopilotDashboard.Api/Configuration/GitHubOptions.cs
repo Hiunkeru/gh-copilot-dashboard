@@ -5,7 +5,7 @@ public class GitHubOptions
     public const string SectionName = "GitHub";
 
     public string Enterprise { get; set; } = string.Empty;
-    public string Organization { get; set; } = string.Empty;
+    public List<string> Organizations { get; set; } = new(); // If empty, auto-discovered from enterprise
     public string Token { get; set; } = string.Empty;
     public string ApiVersion { get; set; } = "2026-03-10";
     public decimal LicenseCostPerMonth { get; set; } = 19m; // USD per seat/month for Business

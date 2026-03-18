@@ -27,6 +27,10 @@ public class SeatInfo
 
     [JsonPropertyName("last_activity_editor")]
     public string? LastActivityEditor { get; set; }
+
+    // Not from API — set by the service to track which org this seat belongs to
+    [JsonIgnore]
+    public string? Organization { get; set; }
 }
 
 public class SeatAssignee

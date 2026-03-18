@@ -37,6 +37,7 @@ export function UserActivityTable({ users, totalCount, page, pageSize, onPageCha
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Org</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Team</th>
               <SortHeader field="lastActivity">Last Activity</SortHeader>
               <SortHeader field="activeDays">Active Days</SortHeader>
@@ -56,6 +57,7 @@ export function UserActivityTable({ users, totalCount, page, pageSize, onPageCha
                     {user.displayName && <p className="text-xs text-gray-500 dark:text-gray-400">{user.displayName}</p>}
                   </div>
                 </td>
+                <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.organization || '-'}</td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.team || '-'}</td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.lastActivity || 'Never'}</td>
                 <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300">{user.activeDays}</td>

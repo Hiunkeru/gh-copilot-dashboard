@@ -105,7 +105,7 @@ public class DailyMetricsSyncService : BackgroundService
 
     private async Task SyncSeatsAsync(IGitHubCopilotService githubService, AppDbContext db, CancellationToken ct)
     {
-        var seats = await githubService.GetSeatsAsync(ct);
+        var seats = await githubService.GetAllSeatsAsync(ct);
 
         // Mark all users as not having seat, then re-mark those that do
         await db.Users.ExecuteUpdateAsync(s => s.SetProperty(u => u.HasSeat, false), ct);
@@ -124,6 +124,7 @@ public class DailyMetricsSyncService : BackgroundService
                     UserLogin = login,
                     DisplayName = seat.Assignee.Name,
                     Team = seat.AssigningTeam?.Slug,
+                    Organization = seat.Organization,
                     HasSeat = true,
                     SeatAssignedDate = DateOnly.TryParse(seat.CreatedAt, out var d) ? d : null,
                     LastSyncedAt = DateTime.UtcNow,
@@ -134,6 +135,7 @@ public class DailyMetricsSyncService : BackgroundService
                 existing.HasSeat = true;
                 existing.DisplayName = seat.Assignee.Name ?? existing.DisplayName;
                 existing.Team = seat.AssigningTeam?.Slug ?? existing.Team;
+                existing.Organization = seat.Organization ?? existing.Organization;
                 existing.LastSyncedAt = DateTime.UtcNow;
             }
         }

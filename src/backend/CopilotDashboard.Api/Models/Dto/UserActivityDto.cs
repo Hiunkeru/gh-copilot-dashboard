@@ -4,6 +4,7 @@ public class UserActivityDto
 {
     public string UserLogin { get; set; } = string.Empty;
     public string? DisplayName { get; set; }
+    public string? Organization { get; set; }
     public string? Team { get; set; }
     public string? LastActivity { get; set; }
     public int ActiveDays { get; set; }

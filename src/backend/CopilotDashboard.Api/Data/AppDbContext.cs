@@ -21,6 +21,7 @@ public class AppDbContext : DbContext
             entity.Property(e => e.UserLogin).HasColumnName("user_login").HasMaxLength(100);
             entity.Property(e => e.DisplayName).HasColumnName("display_name").HasMaxLength(200);
             entity.Property(e => e.Team).HasColumnName("team").HasMaxLength(100);
+            entity.Property(e => e.Organization).HasColumnName("organization").HasMaxLength(100);
             entity.Property(e => e.HasSeat).HasColumnName("has_seat");
             entity.Property(e => e.SeatAssignedDate).HasColumnName("seat_assigned_date");
             entity.Property(e => e.LastSyncedAt).HasColumnName("last_synced_at");

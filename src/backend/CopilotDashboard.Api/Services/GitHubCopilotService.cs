@@ -99,19 +99,68 @@ public class GitHubCopilotService : IGitHubCopilotService
         }
     }
 
-    public async Task<List<SeatInfo>> GetSeatsAsync(CancellationToken ct = default)
+    public async Task<List<string>> GetEnterpriseOrgsAsync(CancellationToken ct = default)
+    {
+        // If organizations are explicitly configured, use those
+        if (_options.Organizations is { Count: > 0 })
+        {
+            _logger.LogInformation("Using {Count} configured organizations: {Orgs}",
+                _options.Organizations.Count, string.Join(", ", _options.Organizations));
+            return _options.Organizations;
+        }
+
+        // Otherwise, auto-discover from the enterprise
+        _logger.LogInformation("Auto-discovering organizations for enterprise {Enterprise}", _options.Enterprise);
+        var orgs = new List<string>();
+        var page = 1;
+
+        while (true)
+        {
+            var url = $"enterprises/{_options.Enterprise}/organizations?page={page}&per_page=100";
+            var response = await _httpClient.GetAsync(url, ct);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to list enterprise orgs (HTTP {Status}). " +
+                    "Configure GitHub:Organizations manually in appsettings.", response.StatusCode);
+                break;
+            }
+
+            var data = await response.Content.ReadFromJsonAsync<List<EnterpriseOrg>>(ct);
+            if (data is null || data.Count == 0) break;
+
+            orgs.AddRange(data.Select(o => o.Login));
+            if (data.Count < 100) break;
+            page++;
+        }
+
+        _logger.LogInformation("Discovered {Count} organizations: {Orgs}",
+            orgs.Count, string.Join(", ", orgs));
+        return orgs;
+    }
+
+    public async Task<List<SeatInfo>> GetSeatsForOrgAsync(string org, CancellationToken ct = default)
     {
         var seats = new List<SeatInfo>();
         var page = 1;
 
         while (true)
         {
-            var url = $"orgs/{_options.Organization}/copilot/billing/seats?page={page}&per_page=100";
+            var url = $"orgs/{org}/copilot/billing/seats?page={page}&per_page=100";
             var response = await _httpClient.GetAsync(url, ct);
-            response.EnsureSuccessStatusCode();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Failed to fetch seats for org {Org} (HTTP {Status})", org, response.StatusCode);
+                break;
+            }
 
             var data = await response.Content.ReadFromJsonAsync<SeatsResponse>(ct);
             if (data?.Seats is null || data.Seats.Count == 0) break;
+
+            // Tag each seat with its org
+            foreach (var seat in data.Seats)
+                seat.Organization = org;
 
             seats.AddRange(data.Seats);
 
@@ -119,7 +168,23 @@ public class GitHubCopilotService : IGitHubCopilotService
             page++;
         }
 
-        _logger.LogInformation("Fetched {Count} seats", seats.Count);
+        _logger.LogInformation("Fetched {Count} seats from org {Org}", seats.Count, org);
         return seats;
+    }
+
+    public async Task<List<SeatInfo>> GetAllSeatsAsync(CancellationToken ct = default)
+    {
+        var orgs = await GetEnterpriseOrgsAsync(ct);
+        var allSeats = new List<SeatInfo>();
+
+        foreach (var org in orgs)
+        {
+            var seats = await GetSeatsForOrgAsync(org, ct);
+            allSeats.AddRange(seats);
+        }
+
+        _logger.LogInformation("Fetched {Total} total seats across {OrgCount} organizations",
+            allSeats.Count, orgs.Count);
+        return allSeats;
     }
 }

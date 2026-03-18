@@ -220,6 +220,7 @@ public class DashboardService : IDashboardService
             {
                 UserLogin = user.UserLogin,
                 DisplayName = user.DisplayName,
+                Organization = user.Organization,
                 Team = user.Team,
                 LastActivity = lastActivity?.ToString("yyyy-MM-dd"),
                 ActiveDays = activeDays,

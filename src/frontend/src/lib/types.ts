@@ -16,6 +16,7 @@ export interface AdoptionOverview {
 export interface UserActivity {
   userLogin: string;
   displayName: string | null;
+  organization: string | null;
   team: string | null;
   lastActivity: string | null;
   activeDays: number;
