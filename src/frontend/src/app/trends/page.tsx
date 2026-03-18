@@ -1,14 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useMsal } from '@azure/msal-react';
 import { api } from '@/lib/api';
+import { useMsalInstance } from '@/hooks/useMsalInstance';
 import { DauWauChart } from '@/components/charts/DauWauChart';
 import { AcceptanceRateChart } from '@/components/charts/AcceptanceRateChart';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function TrendsPage() {
-  const { instance } = useMsal();
+  const instance = useMsalInstance();
 
   const { data: trends, isLoading } = useQuery({
     queryKey: ['trends', 90],

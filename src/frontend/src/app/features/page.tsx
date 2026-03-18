@@ -1,13 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useMsal } from '@azure/msal-react';
 import { api } from '@/lib/api';
 import { FeatureUsagePieChart } from '@/components/charts/FeatureUsagePieChart';
 import { KpiCard } from '@/components/cards/KpiCard';
+import { useMsalInstance } from '@/hooks/useMsalInstance';
 
 export default function FeaturesPage() {
-  const { instance } = useMsal();
+  const instance = useMsalInstance();
 
   const { data, isLoading } = useQuery({
     queryKey: ['features'],

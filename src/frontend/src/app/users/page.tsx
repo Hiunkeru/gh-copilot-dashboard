@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useMsal } from '@azure/msal-react';
 import { api } from '@/lib/api';
 import { UserActivityTable } from '@/components/tables/UserActivityTable';
+import { useMsalInstance } from '@/hooks/useMsalInstance';
 
 export default function UsersPage() {
-  const { instance } = useMsal();
+  const instance = useMsalInstance();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');

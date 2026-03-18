@@ -1,14 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useMsal } from '@azure/msal-react';
 import { api } from '@/lib/api';
 import { KpiCard } from '@/components/cards/KpiCard';
 import { DauWauChart } from '@/components/charts/DauWauChart';
 import { AcceptanceRateChart } from '@/components/charts/AcceptanceRateChart';
+import { useMsalInstance } from '@/hooks/useMsalInstance';
 
 export default function HomePage() {
-  const { instance } = useMsal();
+  const instance = useMsalInstance();
 
   const { data: overview, isLoading: overviewLoading } = useQuery({
     queryKey: ['overview'],

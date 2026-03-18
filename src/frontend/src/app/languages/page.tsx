@@ -1,13 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { useMsal } from '@azure/msal-react';
 import { api } from '@/lib/api';
 import { LanguageBarChart } from '@/components/charts/LanguageBarChart';
 import { EditorDonutChart } from '@/components/charts/EditorDonutChart';
+import { useMsalInstance } from '@/hooks/useMsalInstance';
 
 export default function LanguagesPage() {
-  const { instance } = useMsal();
+  const instance = useMsalInstance();
 
   const { data: languages, isLoading: langLoading } = useQuery({
     queryKey: ['languages'],

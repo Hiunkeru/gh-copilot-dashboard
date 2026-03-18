@@ -1,20 +1,24 @@
 'use client';
 
 import { useTheme } from 'next-themes';
-import { useIsAuthenticated, useMsal } from '@azure/msal-react';
 import { loginRequest } from '@/lib/msalConfig';
 import { useEffect, useState } from 'react';
+import { useMsalInstance } from '@/hooks/useMsalInstance';
+
+const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
-  const { instance, accounts } = useMsal();
-  const isAuthenticated = useIsAuthenticated();
+  const msalInstance = useMsalInstance();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
-  const handleLogin = () => instance.loginPopup(loginRequest);
-  const handleLogout = () => instance.logoutPopup();
+  const accounts = msalInstance?.getAllAccounts() ?? [];
+  const isAuthenticated = DEV_MODE || accounts.length > 0;
+
+  const handleLogin = () => msalInstance?.loginPopup(loginRequest);
+  const handleLogout = () => msalInstance?.logoutPopup();
 
   return (
     <header className="h-14 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex items-center justify-between px-6">
@@ -32,7 +36,11 @@ export function Header() {
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
         )}
-        {isAuthenticated ? (
+        {DEV_MODE ? (
+          <span className="text-sm text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-1 rounded">
+            Dev Mode
+          </span>
+        ) : isAuthenticated ? (
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-700 dark:text-gray-300">
               {accounts[0]?.name || accounts[0]?.username}
