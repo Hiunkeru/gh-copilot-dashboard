@@ -67,11 +67,15 @@ public class GitHubCopilotService : IGitHubCopilotService
         IEnumerable<string> downloadLinks,
         [EnumeratorCancellation] CancellationToken ct = default)
     {
+        // Use a plain HttpClient for download links — they are pre-signed URLs
+        // and must NOT include the GitHub Authorization header
+        using var plainClient = new HttpClient();
+
         foreach (var link in downloadLinks)
         {
-            _logger.LogDebug("Downloading NDJSON from {Link}", link);
+            _logger.LogDebug("Downloading NDJSON from {Link}", link[..Math.Min(80, link.Length)]);
 
-            using var response = await _httpClient.GetAsync(link,
+            using var response = await plainClient.GetAsync(link,
                 HttpCompletionOption.ResponseHeadersRead, ct);
             response.EnsureSuccessStatusCode();
 
