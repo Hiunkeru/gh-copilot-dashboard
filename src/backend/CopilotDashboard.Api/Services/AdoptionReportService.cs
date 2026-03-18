@@ -1,8 +1,11 @@
 using System.Text;
 using System.Text.Json;
 using CopilotDashboard.Api.Configuration;
+using CopilotDashboard.Api.Data;
+using CopilotDashboard.Api.Models.Domain;
 using CopilotDashboard.Api.Models.Dto;
 using CopilotDashboard.Api.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace CopilotDashboard.Api.Services;
@@ -10,17 +13,20 @@ namespace CopilotDashboard.Api.Services;
 public class AdoptionReportService : IAdoptionReportService
 {
     private readonly IDashboardService _dashboardService;
+    private readonly AppDbContext _db;
     private readonly AiFoundryOptions _aiOptions;
     private readonly GitHubOptions _ghOptions;
     private readonly ILogger<AdoptionReportService> _logger;
 
     public AdoptionReportService(
         IDashboardService dashboardService,
+        AppDbContext db,
         IOptions<AiFoundryOptions> aiOptions,
         IOptions<GitHubOptions> ghOptions,
         ILogger<AdoptionReportService> logger)
     {
         _dashboardService = dashboardService;
+        _db = db;
         _aiOptions = aiOptions.Value;
         _ghOptions = ghOptions.Value;
         _logger = logger;
@@ -48,7 +54,61 @@ public class AdoptionReportService : IAdoptionReportService
         // 4. Parse sections from the markdown
         var report = ParseReport(reportMarkdown, overview);
 
-        _logger.LogInformation("Report generated successfully ({Length} chars)", reportMarkdown.Length);
+        // 5. Save to database
+        var entity = new Report
+        {
+            GeneratedAt = DateTime.UtcNow,
+            PeriodStart = report.PeriodStart,
+            PeriodEnd = report.PeriodEnd,
+            FullReportMarkdown = reportMarkdown,
+            TotalSeats = overview.TotalSeats,
+            ActiveUsers = overview.ActiveUsers,
+            AdoptionRate = overview.AdoptionRate,
+            AcceptanceRate = overview.AcceptanceRate,
+            GeneratedBy = "manual",
+        };
+        _db.Reports.Add(entity);
+        await _db.SaveChangesAsync(ct);
+        report.Id = entity.Id;
+
+        _logger.LogInformation("Report #{Id} generated and saved ({Length} chars)", entity.Id, reportMarkdown.Length);
+        return report;
+    }
+
+    public async Task<List<ReportListItemDto>> GetReportsAsync(CancellationToken ct = default)
+    {
+        return await _db.Reports
+            .OrderByDescending(r => r.GeneratedAt)
+            .Select(r => new ReportListItemDto
+            {
+                Id = r.Id,
+                GeneratedAt = r.GeneratedAt.ToString("yyyy-MM-dd HH:mm UTC"),
+                PeriodStart = r.PeriodStart,
+                PeriodEnd = r.PeriodEnd,
+                TotalSeats = r.TotalSeats,
+                ActiveUsers = r.ActiveUsers,
+                AdoptionRate = r.AdoptionRate,
+                AcceptanceRate = r.AcceptanceRate,
+                GeneratedBy = r.GeneratedBy,
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<AdoptionReportDto?> GetReportByIdAsync(int id, CancellationToken ct = default)
+    {
+        var entity = await _db.Reports.FindAsync([id], ct);
+        if (entity is null) return null;
+
+        var report = ParseReport(entity.FullReportMarkdown, new AdoptionOverviewDto
+        {
+            DataAsOf = entity.PeriodEnd,
+            TotalSeats = entity.TotalSeats,
+            ActiveUsers = entity.ActiveUsers,
+            AdoptionRate = entity.AdoptionRate,
+            AcceptanceRate = entity.AcceptanceRate,
+        });
+        report.Id = entity.Id;
+        report.GeneratedAt = entity.GeneratedAt.ToString("yyyy-MM-dd HH:mm UTC");
         return report;
     }
 

@@ -1,6 +1,6 @@
 import { IPublicClientApplication } from '@azure/msal-browser';
 import { loginRequest } from './msalConfig';
-import type { AdoptionOverview, UserActivityPage, FeatureUsage, DistributionItem, TrendPoint, Roi, UserDayDetail, AdoptionReport } from './types';
+import type { AdoptionOverview, UserActivityPage, FeatureUsage, DistributionItem, TrendPoint, Roi, UserDayDetail, AdoptionReport, ReportListItem } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5135';
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
@@ -65,4 +65,6 @@ export const api = {
     if (!res.ok) throw new Error(`Report generation failed: ${res.status}`);
     return res.json();
   },
+  getReports: (msal: IPublicClientApplication | null) => fetchApi<ReportListItem[]>('/api/reports', msal),
+  getReport: (msal: IPublicClientApplication | null, id: number) => fetchApi<AdoptionReport>(`/api/reports/${id}`, msal),
 };

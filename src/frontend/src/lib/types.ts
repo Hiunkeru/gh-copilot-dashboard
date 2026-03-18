@@ -129,6 +129,7 @@ export interface ReportSection {
 }
 
 export interface AdoptionReport {
+  id: number;
   generatedAt: string;
   periodStart: string;
   periodEnd: string;
@@ -141,4 +142,16 @@ export interface AdoptionReport {
   recommendations: ReportSection;
   roiAnalysis: ReportSection;
   fullReportMarkdown: string;
+}
+
+export interface ReportListItem {
+  id: number;
+  generatedAt: string;
+  periodStart: string;
+  periodEnd: string;
+  totalSeats: number;
+  activeUsers: number;
+  adoptionRate: number;
+  acceptanceRate: number;
+  generatedBy: string;
 }

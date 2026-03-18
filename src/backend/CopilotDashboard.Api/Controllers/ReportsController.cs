@@ -25,4 +25,19 @@ public class ReportsController : ControllerBase
         var report = await _reportService.GenerateReportAsync(ct);
         return Ok(report);
     }
+
+    [HttpGet]
+    public async Task<IActionResult> GetReports(CancellationToken ct)
+    {
+        var reports = await _reportService.GetReportsAsync(ct);
+        return Ok(reports);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetReport(int id, CancellationToken ct)
+    {
+        var report = await _reportService.GetReportByIdAsync(id, ct);
+        if (report is null) return NotFound();
+        return Ok(report);
+    }
 }

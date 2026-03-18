@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<DailyUsage> DailyUsages => Set<DailyUsage>();
     public DbSet<DailyAggregate> DailyAggregates => Set<DailyAggregate>();
+    public DbSet<Report> Reports => Set<Report>();
     public DbSet<DailyUsageDetail> DailyUsageDetails => Set<DailyUsageDetail>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -99,6 +100,22 @@ public class AppDbContext : DbContext
             entity.HasOne(e => e.User)
                 .WithMany(u => u.DailyUsageDetails)
                 .HasForeignKey(e => e.UserLogin);
+        });
+
+        modelBuilder.Entity<Report>(entity =>
+        {
+            entity.ToTable("reports");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasColumnName("id").ValueGeneratedOnAdd();
+            entity.Property(e => e.GeneratedAt).HasColumnName("generated_at");
+            entity.Property(e => e.PeriodStart).HasColumnName("period_start").HasMaxLength(10);
+            entity.Property(e => e.PeriodEnd).HasColumnName("period_end").HasMaxLength(10);
+            entity.Property(e => e.FullReportMarkdown).HasColumnName("full_report_markdown");
+            entity.Property(e => e.TotalSeats).HasColumnName("total_seats");
+            entity.Property(e => e.ActiveUsers).HasColumnName("active_users");
+            entity.Property(e => e.AdoptionRate).HasColumnName("adoption_rate").HasPrecision(5, 1);
+            entity.Property(e => e.AcceptanceRate).HasColumnName("acceptance_rate").HasPrecision(5, 1);
+            entity.Property(e => e.GeneratedBy).HasColumnName("generated_by").HasMaxLength(100);
         });
     }
 }
