@@ -2,7 +2,13 @@
 
 A full-stack dashboard to monitor, analyze, and audit GitHub Copilot usage across your enterprise. Built for engineering leaders, IA Champions, and DevEx teams who need visibility into how Copilot is being adopted.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black) ![.NET](https://img.shields.io/badge/.NET-8-purple) ![Terraform](https://img.shields.io/badge/Terraform-Azure-blue) ![License](https://img.shields.io/badge/license-MIT-green)
+[![CI](https://github.com/Hiunkeru/gh-copilot-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/Hiunkeru/gh-copilot-dashboard/actions/workflows/ci.yml)
+[![CD](https://github.com/Hiunkeru/gh-copilot-dashboard/actions/workflows/cd.yml/badge.svg)](https://github.com/Hiunkeru/gh-copilot-dashboard/actions/workflows/cd.yml)
+![Next.js](https://img.shields.io/badge/Next.js-14-black)
+![.NET](https://img.shields.io/badge/.NET-8-purple)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-Azure-7B42BC?logo=terraform&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ## What It Does
 
@@ -97,8 +103,8 @@ Reports are stored and can be reviewed at any time from the report history.
 ### 1. Clone and configure
 
 ```bash
-git clone https://github.com/AirPlaneSolutions-IA/aps-dashboad.git
-cd aps-dashboad
+git clone https://github.com/Hiunkeru/gh-copilot-dashboard.git
+cd gh-copilot-dashboard
 ```
 
 Create `src/backend/CopilotDashboard.Api/appsettings.Development.json`:

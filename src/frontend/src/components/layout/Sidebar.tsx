@@ -35,7 +35,7 @@ export function Sidebar() {
   return (
     <aside className="w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 min-h-screen p-4 hidden md:block">
       <div className="mb-8">
-        <h1 className="text-xl font-bold text-gray-900 dark:text-white">APS Dashboard</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">GH Dashboard</h1>
       </div>
       <nav className="space-y-6">
         {navSections.map((section) => (

@@ -15,7 +15,7 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">APS Dashboard</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">GH Dashboard</h2>
         <p className="mt-2 text-gray-500 dark:text-gray-400">
           Central hub for engineering tools and analytics
         </p>

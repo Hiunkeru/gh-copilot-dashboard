@@ -10,8 +10,8 @@ import { Header } from '@/components/layout/Header';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'APS Dashboard',
-  description: 'APS engineering tools and analytics dashboard',
+  title: 'GH Dashboard',
+  description: 'GH engineering tools and analytics dashboard',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
