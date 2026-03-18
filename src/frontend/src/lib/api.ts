@@ -1,6 +1,6 @@
 import { IPublicClientApplication } from '@azure/msal-browser';
 import { loginRequest } from './msalConfig';
-import type { AdoptionOverview, UserActivityPage, FeatureUsage, DistributionItem, TrendPoint, Roi, UserDayDetail } from './types';
+import type { AdoptionOverview, UserActivityPage, FeatureUsage, DistributionItem, TrendPoint, Roi, UserDayDetail, AdoptionReport } from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5135';
 const DEV_MODE = process.env.NEXT_PUBLIC_DEV_MODE === 'true';
@@ -55,6 +55,14 @@ export const api = {
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`${API_URL}/api/sync/trigger`, { method: 'POST', headers });
     if (!res.ok) throw new Error(`Sync failed: ${res.status}`);
+    return res.json();
+  },
+  generateReport: async (msal: IPublicClientApplication | null): Promise<AdoptionReport> => {
+    const token = await getToken(msal);
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(`${API_URL}/api/reports/generate`, { method: 'POST', headers });
+    if (!res.ok) throw new Error(`Report generation failed: ${res.status}`);
     return res.json();
   },
 };

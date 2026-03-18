@@ -28,6 +28,7 @@ else
 // Configuration
 builder.Services.Configure<GitHubOptions>(builder.Configuration.GetSection(GitHubOptions.SectionName));
 builder.Services.Configure<SyncOptions>(builder.Configuration.GetSection(SyncOptions.SectionName));
+builder.Services.Configure<AiFoundryOptions>(builder.Configuration.GetSection(AiFoundryOptions.SectionName));
 
 // Database: InMemory for dev, SQL Server for production
 if (isDev)
@@ -47,6 +48,7 @@ builder.Services.AddHttpClient<IGitHubCopilotService, GitHubCopilotService>()
 
 // Services
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IAdoptionReportService, AdoptionReportService>();
 builder.Services.AddSingleton<IMetricsFlattener, MetricsFlattener>();
 builder.Services.AddSingleton<IUserCategorizationService, UserCategorizationService>();
 

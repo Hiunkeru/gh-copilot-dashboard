@@ -122,3 +122,23 @@ export interface Roi {
   activeUsers: number;
   totalSeats: number;
 }
+
+export interface ReportSection {
+  title: string;
+  content: string;
+}
+
+export interface AdoptionReport {
+  generatedAt: string;
+  periodStart: string;
+  periodEnd: string;
+  executiveSummary: ReportSection;
+  adoptionAnalysis: ReportSection;
+  topPerformers: ReportSection;
+  atRiskUsers: ReportSection;
+  featureAdoption: ReportSection;
+  trends: ReportSection;
+  recommendations: ReportSection;
+  roiAnalysis: ReportSection;
+  fullReportMarkdown: string;
+}

@@ -24,6 +24,7 @@ const navSections: NavSection[] = [
       { href: '/metrics/languages', label: 'Languages', icon: '💻' },
       { href: '/metrics/trends', label: 'Trends', icon: '📈' },
       { href: '/metrics/roi', label: 'ROI', icon: '💰' },
+      { href: '/metrics/reports', label: 'AI Reports', icon: '🤖' },
     ],
   },
 ];
