@@ -5,5 +5,5 @@ namespace CopilotDashboard.Api.Services;
 
 public interface IMetricsFlattener
 {
-    (DailyUsage Usage, List<DailyUsageDetail> Details) Flatten(UserMetricsRecord record);
+    (DailyUsage Usage, List<DailyUsageDetail> Details)? Flatten(UserMetricsRecord record);
 }

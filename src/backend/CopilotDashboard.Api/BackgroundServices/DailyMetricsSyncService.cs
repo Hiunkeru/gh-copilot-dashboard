@@ -76,12 +76,17 @@ public class DailyMetricsSyncService : BackgroundService
             var usages = new List<DailyUsage>();
             var details = new List<DailyUsageDetail>();
 
+            var skipped = 0;
             await foreach (var record in githubService.StreamNdjsonRecordsAsync(report.DownloadLinks, ct))
             {
-                var (usage, recordDetails) = flattener.Flatten(record);
+                var result = flattener.Flatten(record);
+                if (result is null) { skipped++; continue; }
+                var (usage, recordDetails) = result.Value;
                 usages.Add(usage);
                 details.AddRange(recordDetails);
             }
+            if (skipped > 0)
+                _logger.LogWarning("Skipped {Count} records with missing date or user_login", skipped);
 
             _logger.LogInformation("Parsed {UsageCount} usage records and {DetailCount} detail records",
                 usages.Count, details.Count);

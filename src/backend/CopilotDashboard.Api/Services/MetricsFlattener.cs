@@ -5,9 +5,12 @@ namespace CopilotDashboard.Api.Services;
 
 public class MetricsFlattener : IMetricsFlattener
 {
-    public (DailyUsage Usage, List<DailyUsageDetail> Details) Flatten(UserMetricsRecord record)
+    public (DailyUsage Usage, List<DailyUsageDetail> Details)? Flatten(UserMetricsRecord record)
     {
-        var date = DateOnly.Parse(record.Date);
+        if (string.IsNullOrWhiteSpace(record.Date) || !DateOnly.TryParse(record.Date, out var date))
+            return null;
+        if (string.IsNullOrWhiteSpace(record.UserLogin))
+            return null;
         var details = new List<DailyUsageDetail>();
 
         int totalSuggestions = 0, totalAcceptances = 0;
