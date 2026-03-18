@@ -1,11 +1,9 @@
 using System.Text;
 using System.Text.Json;
-using Azure;
-using Azure.AI.OpenAI;
 using CopilotDashboard.Api.Configuration;
 using CopilotDashboard.Api.Models.Dto;
+using CopilotDashboard.Api.Services;
 using Microsoft.Extensions.Options;
-using OpenAI.Chat;
 
 namespace CopilotDashboard.Api.Services;
 
@@ -123,12 +121,6 @@ public class AdoptionReportService : IAdoptionReportService
 
     private async Task<string> CallAiFoundryAsync(string dataContext, CancellationToken ct)
     {
-        var client = new AzureOpenAIClient(
-            new Uri(_aiOptions.Endpoint),
-            new AzureKeyCredential(_aiOptions.ApiKey));
-
-        var chatClient = client.GetChatClient(_aiOptions.DeploymentName);
-
         var systemPrompt = @"Eres un analista experto en adopción de herramientas de desarrollo y GitHub Copilot.
 Tu objetivo es generar un informe ejecutivo de adopción de GitHub Copilot en español para la organización.
 
@@ -170,20 +162,43 @@ IMPORTANTE:
 - Identifica patrones y anomalías
 - Las recomendaciones deben ser accionables, no teóricas";
 
-        var messages = new List<ChatMessage>
+        // Call Azure AI Foundry directly via HTTP (to control the api-version for o4-mini)
+        var url = $"{_aiOptions.Endpoint.TrimEnd('/')}/openai/deployments/{_aiOptions.DeploymentName}/chat/completions?api-version=2025-01-01-preview";
+
+        var requestBody = new
         {
-            new SystemChatMessage(systemPrompt),
-            new UserChatMessage($"Genera el informe de adopción de GitHub Copilot basado en estos datos:\n\n{dataContext}")
+            messages = new object[]
+            {
+                new { role = "system", content = systemPrompt },
+                new { role = "user", content = $"Genera el informe de adopción de GitHub Copilot basado en estos datos:\n\n{dataContext}" }
+            },
+            max_tokens = 4000,
+            temperature = 0.3
         };
 
-        var options = new ChatCompletionOptions
-        {
-            MaxOutputTokenCount = 4000,
-            Temperature = 0.3f,
-        };
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("api-key", _aiOptions.ApiKey);
 
-        var response = await chatClient.CompleteChatAsync(messages, options, ct);
-        return response.Value.Content[0].Text;
+        var json = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await httpClient.PostAsync(url, content, ct);
+        var responseBody = await response.Content.ReadAsStringAsync(ct);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError("AI Foundry returned {Status}: {Body}", response.StatusCode, responseBody);
+            throw new InvalidOperationException($"AI Foundry error: {response.StatusCode}");
+        }
+
+        using var doc = JsonDocument.Parse(responseBody);
+        var message = doc.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return message ?? throw new InvalidOperationException("Empty response from AI Foundry");
     }
 
     private AdoptionReportDto ParseReport(string markdown, AdoptionOverviewDto overview)
