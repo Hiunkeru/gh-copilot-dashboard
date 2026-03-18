@@ -10,8 +10,8 @@ import { Header } from '@/components/layout/Header';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Copilot Dashboard - Usage Metrics',
-  description: 'GitHub Copilot usage metrics dashboard for auditing adoption',
+  title: 'APS Dashboard',
+  description: 'APS engineering tools and analytics dashboard',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

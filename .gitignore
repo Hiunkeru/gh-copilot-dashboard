@@ -35,6 +35,7 @@ Thumbs.db
 *.pfx
 *.pem
 appsettings.*.local.json
+appsettings.Development.json
 
 # Claude
 .claude/
