@@ -1,15 +1,12 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useMsalInstance } from '@/hooks/useMsalInstance';
 import { KpiCard } from '@/components/cards/KpiCard';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-export function UserDetailContent() {
-  const params = useParams();
-  const login = params.login as string;
+export function UserDetailContent({ login }: { login: string }) {
   const instance = useMsalInstance();
 
   const { data: history, isLoading } = useQuery({

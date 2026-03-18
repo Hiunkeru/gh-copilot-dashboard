@@ -55,7 +55,7 @@ export function UserActivityTable({ users, totalCount, page, pageSize, onPageCha
               <tr key={user.userLogin} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                 <td className="px-4 py-3">
                   <div>
-                    <a href={`/metrics/users/${user.userLogin}`} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">{user.userLogin}</a>
+                    <a href={`/metrics/users/detail?login=${user.userLogin}`} className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline">{user.userLogin}</a>
                     {user.displayName && <p className="text-xs text-gray-500 dark:text-gray-400">{user.displayName}</p>}
                   </div>
                 </td>
